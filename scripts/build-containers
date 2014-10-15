@@ -1,4 +1,3 @@
-cd containers/api && ./build-container && cd ../..
-cd containers/mongodb && ./build-container && cd ../..
-cd containers/rabbitmq && ./build-container && cd ../..
-cd containers/redis && ./build-container && cd ../..
+cd containers/ubuntu && ./build-container && cd ../..
+cd containers/nodejs && ./build-container && cd ../..
+cd containers/simpleapp && ./build-container && cd ../..
