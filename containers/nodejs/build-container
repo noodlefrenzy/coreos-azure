@@ -1,1 +1,1 @@
-docker build --rm -t 'timfpark/nodejs' .
+docker build --rm -t 'timpark/nodejs' .
