@@ -1,8 +1,0 @@
-[Unit]
-Description=Nitrogen Redis
-After=docker.service
-Requires=docker.service
-
-[Service]
-ExecStart=/usr/bin/docker run -rm --name redis -p 6379:6379 dockerfile/redis
-ExecStop=/usr/bin/docker rm -f redis
