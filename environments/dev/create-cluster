@@ -4,12 +4,23 @@ azure vm create \
 coreos-1 \
 coreos-test \
 ops \
---affinity-group n2-affinity \
 --vm-size small \
---vm-name n2-api-1 \
---ssh 22001 \
---ssh-cert /Users/timpark/dev/nitrogen/ops/keys/nitrogen-vm-auth.pem \
+--vm-name coreos-1 \
+--ssh 22 \
+--ssh-cert ../../keys/ssh-cert.pem \
 --no-ssh-password \
---virtual-network-name n2-network \
---subnet-names VMs \
+--virtual-network-name coreos-network \
 --custom-data coreos-1.yml
+
+azure vm create \
+coreos-2 \
+coreos-test \
+ops \
+--vm-size small \
+--vm-name coreos-2 \
+--ssh 22 \
+--ssh-cert ../../keys/ssh-cert.pem \
+--no-ssh-password \
+--virtual-network-name coreos-network \
+--custom-data coreos-2.yml
+

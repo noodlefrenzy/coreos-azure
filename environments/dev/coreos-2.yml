@@ -2,7 +2,7 @@
 
 coreos:
     etcd:
-        name: coreos-1
+        name: coreos-2
 
 	# generate a new token for each unique cluster from https://discovery.etcd.io/new
         discovery: https://discovery.etcd.io/7d70198da522d9b4e8ecae5dc8b00034
@@ -24,4 +24,4 @@ coreos:
 
 ssh_authorized_keys:
   -ssh-rsa <your key here> 
-hostname: coreos-1
+hostname: coreos-2
