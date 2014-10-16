@@ -1,6 +1,7 @@
 FROM timpark/nodejs
 MAINTAINER Tim Park <tpark@microsoft.com>
 
-ADD start.sh /tmp/
-RUN chmod +x /tmp/start.sh
-CMD ./tmp/start.sh
+RUN mkdir /var/www
+ADD start.sh /var/www/
+RUN chmod +x /var/www/start.sh
+CMD ./var/www/start.sh

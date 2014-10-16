@@ -1,4 +1,4 @@
-cd /tmp
+cd /var/www
 
 # remove repo if it already exists
 rm -rf simple-nodejs-server; true
