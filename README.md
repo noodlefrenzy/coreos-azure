@@ -1,22 +1,18 @@
-# Deploying Apps on Microsoft Azure with Docker and CoreOS
+# Deploying Apps with Docker and CoreOS on Microsoft Azure
 
-Docker has swept the industry.
-Microsoft is a big fan of containerization.
-Containers introduce another level of virtualization.
-Multiple containers share the same underlying OS.
-More memory efficient but sharing OS adds deployment security considerations.
+This quickstart repo provides everything you need to go from nothing to deploying a scaled node.js application using Docker and CoreOS on Microsoft Azure.
 
-This tutorial assumes you are running on an Debian-based system like Ubuntu.
-
-I’m going to use a Azure VM running Ubuntu 14.04 LTS for this walkthrough.
+This quickstart assumes you are running on an Debian-based system like Ubuntu. I’m going to use a Azure VM running Ubuntu 14.04 LTS for this walkthrough, so if you don't have a native Ubuntu machine, go ahead now and spin up a small (A1) Azure VM.
 
 ## Docker Fundamentals
 
-Before we jump into CoreOS, you should understand the fundamentals of Docker.  This section will run through building a Docker container that houses our node.js application.  If you are familiar with Docker already, you can skim this section and move on to the second section on CoreOS.
+Before we jump into CoreOS, you should understand the fundamentals of Docker. This section will run through building a Docker container that houses our node.js application.  If you are familiar with Docker already, you can skim this section and move on to the second section ( "Deploying applications with CoreOS").
 
-### Installing Docker
+Docker provides an easy to use mechanism for building containerized cloud workloads. Containers introduce another level of virtualization between a VM and bare metal. Containers share the same underlying OS but utilize a facilility of the OS (LXC in Linux) to run concurrently with other containers on that host. This has memory efficiency benefits at the expense of losing some of the security isolation benefits of full VMs. If this concept is new to you, I'd recommend reading more on the [Docker website](https://www.docker.com/whatisdocker/) before continuing.
 
-In your Ubuntu 14.04 VM, run the following:
+### Installing Docker and this sample repo
+
+On your Ubuntu instance, run the following to install Docker if you haven't already:
 
 ```
 $ sudo apt-get update
@@ -179,18 +175,50 @@ Let's review what we have done in this first section.  We have built a Docker co
 
 Let's next see how we can use CoreOS to manage these application containers at scale.
 
-## Starting a CoreOS cluster
+## Deploying applications with CoreOS
 
-REVISE THIS SECTION ONCE IMAGE IS LAUNCHED IN GALLERY --->
+Now that we have a Docker image how do we go about deploying it?
 
-Upload CoreOS VM image to your storage account:
+Enter CoreOS
 
-First create an image in your subscription based on this blob using the Azure CLI on any machine:
+CoreOS provides instructure for deploying containers at scale.
+* Stripped down Linux distribution
+* Self updating Linux distribution based off of the technology behind Chromium.
+* Cluster management of container hosts.
+* Rule based container assignment to hosts.
+* Service discovery of where services are running on the cluster.
 
-azure vm disk upload --verbose https://coreos.blob.core.windows.net/public/coreos-469.0.0-alpha.vhd http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd <your storage key>
+### Upload CoreOS VM image to your storage account:
 
+If you haven't yet, install node.js on your development machine, the Azure command line tools, and import your subscription:
+
+```
+$ npm install -g azure
+$ azure account download
+```
+
+(revise this when CoreOS image is available in the VM gallery)
+
+Next, we need to do a couple of prep items in the Azure portal before we can get started:
+
+1. Create a storage account in your subscription with a container. Note the storage account name, container name, and key.
+2. Create a virtual network. Call it "coreos-network" and place it in "East US".
+
+If you don't have a storage account yet, create one using the Azure portal and a container that goes along with it.
+First create an image in your subscription using the Azure command line tools on any machine:
+
+```
+$ azure vm disk upload --verbose https://coreos.blob.core.windows.net/public/coreos-469.0.0-alpha.vhd http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd <your storage key>
+```
 Then create a VM image for this VHD:
 
-azure vm image create coreos --location "East US" --blob-url http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd --os linux
+```
+$ azure vm image create coreos --location "East US" --blob-url http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd --os linux
+```
 
- <--- END OF BLOCK
+Next, create SSH keys that we'll use for connecting to your CoreOS cluster machines. There is a script in the keys directory to do this for you. Accept all of the defaults that openssl asks you for.
+
+```
+$ cd keys
+$ ./generate-keys
+```
