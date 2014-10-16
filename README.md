@@ -193,7 +193,7 @@ CoreOS provides instructure for deploying containers at scale.
 If you haven't yet, install node.js on your development machine, the Azure command line tools, and import your subscription:
 
 ```
-$ npm install -g azure
+$ sudo npm install -g azure
 $ azure account download
 ```
 
@@ -204,21 +204,69 @@ Next, we need to do a couple of prep items in the Azure portal before we can get
 1. Create a storage account in your subscription with a container. Note the storage account name, container name, and key.
 2. Create a virtual network. Call it "coreos-network" and place it in "East US".
 
-If you don't have a storage account yet, create one using the Azure portal and a container that goes along with it.
-First create an image in your subscription using the Azure command line tools on any machine:
+Now upload the CoreOS disk image to your subscription using the Azure command line tools:
 
 ```
 $ azure vm disk upload --verbose https://coreos.blob.core.windows.net/public/coreos-469.0.0-alpha.vhd http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd <your storage key>
 ```
-Then create a VM image for this VHD:
+
+And create a VM image for this VHD:
 
 ```
 $ azure vm image create coreos --location "East US" --blob-url http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd --os linux
 ```
 
-Next, create SSH keys that we'll use for connecting to your CoreOS cluster machines. There is a script in the keys directory to do this for you. Accept all of the defaults that openssl asks you for.
+Create SSH keys that we'll use for connecting to your CoreOS cluster machines. There is a script in the keys directory to do this for you. Accept all of the defaults that openssl asks you for.
 
 ```
 $ cd keys
 $ ./generate-keys
 ```
+
+Ok, we have what we need now from an Azure perspective. Let's now configure our CoreOS cluster.
+
+Change to the ~/environments/dev directory.
+
+The first thing we are going to do is get a discovery token for etcd. 'etcd' is a distributed key-value store built on the Raft protocol and acts as a store for configuration information for CoreOS. Fleet, another part of the CoreOS puzzle, is a low-level init system built on 'etcd' that provides the functionality of Systemd over a distributed cluster.
+
+This discovery token is configured in a set of cloud-init file called coreos-1.yml, coreos-2.yml, and coreos-3.yml. This configures the CoreOS image once it is provisioned by Azure and, in particular, it injects the etcd discovery token into the virtual machine so that it knows which CoreOS cluster it belongs to. Let's provision a new one for our cluster:
+
+```
+$ curl https://discovery.etcd.io/new
+```
+
+This will fetch a discovery URL that looks something like https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab. Copy this and edit coreos.yml and paste this into the cloud-init like this:
+
+```
+# coreos cloud-init
+
+coreos:
+    etcd:
+        # generate a new token for each unique cluster from https://discovery.etcd.io/new
+        discovery: https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab
+
+        # multi-region and multi-cloud deployments need to use $public_ipv4
+        addr: $private_ipv4:4001
+        peer-addr: $private_ipv4:7001
+
+    fleet:
+        public-ip: $private_ipv4
+        metadata: region=us-east
+
+    units:
+      - name: etcd.service
+        command: start
+      - name: fleet.service
+        command: start
+        after: etcd.service
+```
+
+Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier:
+
+```
+$ ./create-cluster
+```
+
+What this script does is create three cluster VMs called coreos-1, coreos-2, and coreos-3 using the Azure command line interface and places them all into the same affinity group called
+
+
