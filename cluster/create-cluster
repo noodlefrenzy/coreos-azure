@@ -1,26 +1,51 @@
 #!/bin/bash
 
+# azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
+# azure service create --affinitygroup coreos-affinity coreosapp
+
 azure vm create \
 coreos-1 \
-coreos-test \
+coreos \
 ops \
 --vm-size small \
 --vm-name coreos-1 \
+--affinity-group coreos-affinity \
+--availability-set coreos-cluster-as \
 --ssh 22 \
---ssh-cert ../../keys/ssh-cert.pem \
+--ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
 --custom-data coreos-1.yml
 
 azure vm create \
 coreos-2 \
-coreos-test \
+coreos \
 ops \
 --vm-size small \
 --vm-name coreos-2 \
+--affinity-group coreos-affinity \
+--availability-set coreos-cluster-as \
 --ssh 22 \
---ssh-cert ../../keys/ssh-cert.pem \
+--ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
 --custom-data coreos-2.yml
 
+#azure vm create \
+#coreosapp \
+#coreos-test \
+#ops \
+#--connect \
+#--affinity-group coreos-affinity \
+#--availability-set coreos-cluster-as \
+#--vm-size small \
+#--vm-name coreos-2 \
+#--ssh 22002 \
+#--ssh-cert ../keys/ssh-cert.pem \
+#--no-ssh-password \
+#--virtual-network-name coreos-network \
+#--custom-data coreos-2.yml
+
+# azure vm endpoint create coreos-1 80 80
+# azure vm endpoint create coreos-2 80 80
+# azure vm endpoint create coreos-3 80 80

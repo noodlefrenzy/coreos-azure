@@ -1,27 +1,21 @@
-# dev cloud-config
-
+#cloud-config
 coreos:
     etcd:
         name: coreos-1
-
-	# generate a new token for each unique cluster from https://discovery.etcd.io/new
-        discovery: https://discovery.etcd.io/7d70198da522d9b4e8ecae5dc8b00034
-
-        # multi-region and multi-cloud deployments need to use $public_ipv4
+    # generate a new token for each unique cluster from https://discovery.etcd.io/new
+        discovery: https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab
+    # multi-region and multi-cloud deployments need to use $public_ipv4
         addr: $private_ipv4:4001
         peer-addr: $private_ipv4:7001
-
     fleet:
         public-ip: $private_ipv4
-        metadata: region=us-east
-
+        metadata: region=us-west
     units:
       - name: etcd.service
         command: start
       - name: fleet.service
         command: start
         after: etcd.service
-
 ssh_authorized_keys:
-  -ssh-rsa <your key here> 
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsk+NkMJrnkIF09Tn3PsDGRic9hAYbyTmy2F4hYmpM1LNmrWAkqZ3uiD2V0ak1n3dpk8LtIHEjAG8NFUpMV0tCXyhX9kpY/AEf2q5p1EQUSHFaXDniKfoOJP8kFI4E0hIgobM2UB7l9K/enjVjX8kZ+9UkS9uRN1aLL0lbqIHk/xPOIv+d7fyivnbLi9bjvVvKnG9xbH4rfZcG3hWw6Ptc9JsYLVo3Q0Vm4f0KndXO2fIUwsRHLljKwuE1JOZk4U68TTZn+JCBSnqpkiGl7+Ax0I7sU0t5RIl7hpUbNJtm1n6NyXX/lDs9WqIpn/tF1In45bv2R3nACq+ZTAZe4huj
 hostname: coreos-1
