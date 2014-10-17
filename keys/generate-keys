@@ -1,2 +1,6 @@
 #!/bin/bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ssh-private.key -out ssh-cert.pem
+chmod 600 ssh-private.key
+openssl x509 -outform der -in ssh-cert.pem -out ssh-cert.cer
+openssl rsa -in ssh-private.key -pubout > ssh-public.key
+ssh-keygen -y -f ssh-private.key > ssh-authorized.key
