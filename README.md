@@ -273,8 +273,9 @@ Next, create a cloud service for this cluster. We are going to assign containers
 $ azure service create --affinitygroup coreos-affinity [cloud service name]
 ```
 
-And then edit create-cluster and replace "[cloud service name]" with the cloud service name that you chose.
+Edit create-cluster and replace "[cloud service name]" with the cloud service name that you chose.
 
+```
 azure vm create \
 [cloud service name] \
 coreos \
@@ -318,12 +319,15 @@ ops \
 --no-ssh-password \
 --virtual-network-name coreos-network \
 --custom-data coreos-3.yml
+```
+
+Then run the script to launch your CoreOS cluster:
 
 ```
 $ ./create-cluster
 ```
 
-We should have a running CoreOS cluster now. Let's quickly ssh into the first machine in the cluster and check to make sure everything looks ok:
+Let's quickly ssh into the first machine in the cluster and check to make sure everything looks ok:
 
 ```
 $ ssh ops@[cloud service name].cloudapp.net -p 22001 -i ../../keys/ssh-private.key
@@ -357,7 +361,7 @@ $ cp bin/fleetctl /usr/local/bin
 CoreOS security works off the principle that if you have the credentials to ssh into the cluster you are also authorized to manage it. fleetctl is the most frequently used tool for managing our cluster so let's set an environment variable so that fleetctl knows to tunnel over ssh to control the cluster.
 
 ```
-$ export FLEETCTL_TUNNEL=[your cloud service name].cloudapp.net:2222
+$ export FLEETCTL_TUNNEL=[your cloud service].cloudapp.net:2222
 ```
 
 Now you should be able to use your development machine to control the cluster. Let's list the units on the cluster:
@@ -368,4 +372,47 @@ $ fleetctl list-units
 
 TODO: The expected output
 
-Ok, so we have setup our cluster, and our development machine locally to control the cluster. Let's next schedule a unit on the cluster for execution. A unit is a
+Ok, so we have setup our cluster, and our development machine locally to control the cluster. Let's next schedule a unit on the cluster for execution. CoreOS uses the Systemd system management daemon to manage workloads on individual cluster machines and extends this concept to scheduling rule based distributed workloads across cluster machines.
+
+Our Systemd unit file that we are using for our application looks like this:
+
+```
+[Unit]
+Description=Simple CoreOS Application
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull timpark/simpleapp:latest
+ExecStart=/usr/bin/docker run --name simpleapp -p 80:8000 timpark/simpleapp
+ExecStopPre=/usr/bin/docker kill simpleapp
+ExecStop=/usr/bin/docker rm simpleapp
+TimeoutStartSec=0
+Restart=always
+RestartSec=10s
+
+[X-Fleet]
+X-Conflicts=simpleapp@*.service
+```
+
+This unit file has two functions. It first tells Systemd how to start and stop this container. In this case, we are using it to download (if necessary) and start up the Docker node.js container we pushed in the first part of this quickstart. Secondly, it tells CoreOS how this workload can be distributed across the cluster. Here, X-Conflicts tells CoreOS that only one instance of this container can be run on a given CoreOS host.
+
+The fact that this filename ends in @ indicates that it is a unit file template for CoreOS and that it can be applied multiple times.
+
+We can use that to spin up three instances of our simple application:
+
+```
+$ fleetctl start simpleapp@{1,2,3}.service
+```
+
+TODO: output?
+
+if we then list our units:
+
+```
+$ fleetctl list-units
+```
+
+TODO: show output
+
+
