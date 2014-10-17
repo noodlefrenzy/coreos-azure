@@ -261,12 +261,111 @@ coreos:
         after: etcd.service
 ```
 
-Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier:
+Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier for you (create-cluster). We'll first need to create an affinity group for this cluster so the hosts selected for the CoreOS VMs are close to each other:
+
+```
+$ azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
+```
+
+Next, create a cloud service for this cluster. We are going to assign containers to each of the hosts in this cluster to serve web traffic so we want to load balancing incoming requests across them using a cloud service. This cloud service name needs to be unique across all of Azure, so choose a unique one for your cloud service:
+
+```
+$ azure service create --affinitygroup coreos-affinity [cloud service name]
+```
+
+And then edit create-cluster and replace "[cloud service name]" with the cloud service name that you chose.
+
+azure vm create \
+[cloud service name] \
+coreos \
+ops \
+--vm-size small \
+--vm-name coreos-1 \
+--affinity-group coreos-affinity \
+--availability-set coreos-cluster-as \
+--ssh 22001 \
+--ssh-cert ../../keys/ssh-cert.pem \
+--no-ssh-password \
+--virtual-network-name coreos-network \
+--custom-data coreos-1.yml
+
+azure vm create \
+[cloud service name] \
+coreos \
+ops \
+--connect \
+--vm-size small \
+--vm-name coreos-2 \
+--affinity-group coreos-affinity \
+--availability-set coreos-cluster-as \
+--ssh 22002 \
+--ssh-cert ../../keys/ssh-cert.pem \
+--no-ssh-password \
+--virtual-network-name coreos-network \
+--custom-data coreos-2.yml
+
+azure vm create \
+[cloud service name] \
+coreos \
+ops \
+--connect \
+--vm-size small \
+--vm-name coreos-3 \
+--affinity-group coreos-affinity \
+--availability-set coreos-cluster-as \
+--ssh 22002 \
+--ssh-cert ../../keys/ssh-cert.pem \
+--no-ssh-password \
+--virtual-network-name coreos-network \
+--custom-data coreos-3.yml
 
 ```
 $ ./create-cluster
 ```
 
-What this script does is create three cluster VMs called coreos-1, coreos-2, and coreos-3 using the Azure command line interface and places them all into the same affinity group called
+We should have a running CoreOS cluster now. Let's quickly ssh into the first machine in the cluster and check to make sure everything looks ok:
 
+```
+$ ssh ops@[cloud service name].cloudapp.net -p 22001 -i ../../keys/ssh-private.key
+```
 
+Let's first make sure etcd is up and running:
+
+```
+$ sudo etcdctl ls --recursive
+```
+
+TODO: The expected output
+
+And that fleetctl knows about all of the members of the cluster:
+
+```
+$ sudo fleetctl list-machines
+```
+
+TODO: The expected output
+
+Exit the ssh session to the cluster. Let's setup our development machine to be able to control the cluster. The first thing we need to do install fleetctl locally. We do that by cloning the fleet repo (in another directory), building it locally, and installing it manually:
+
+```
+$ git clone https://github.com/coreos/fleet.git
+$ cd fleet
+$ ./build
+$ cp bin/fleetctl /usr/local/bin
+```
+
+CoreOS security works off the principle that if you have the credentials to ssh into the cluster you are also authorized to manage it. fleetctl is the most frequently used tool for managing our cluster so let's set an environment variable so that fleetctl knows to tunnel over ssh to control the cluster.
+
+```
+$ export FLEETCTL_TUNNEL=[your cloud service name].cloudapp.net:2222
+```
+
+Now you should be able to use your development machine to control the cluster. Let's list the units on the cluster:
+
+```
+$ fleetctl list-units
+```
+
+TODO: The expected output
+
+Ok, so we have setup our cluster, and our development machine locally to control the cluster. Let's next schedule a unit on the cluster for execution. A unit is a
