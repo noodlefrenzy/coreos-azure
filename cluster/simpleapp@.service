@@ -1,0 +1,16 @@
+[Unit]
+Description=Simple CoreOS Application
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStartPre=/usr/bin/docker pull timfpark/simpleapp:latest
+ExecStart=/usr/bin/docker run --name simpleapp -p 80:8000 timfpark/simpleapp
+ExecStopPre=/usr/bin/docker kill simpleapp
+ExecStop=/usr/bin/docker rm simpleapp
+TimeoutStartSec=0
+Restart=always
+RestartSec=10s
+
+[X-Fleet]
+X-Conflicts=simpleapp@*.service
