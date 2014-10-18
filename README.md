@@ -1,8 +1,8 @@
-# Deploying Apps with Docker and CoreOS on Microsoft Azure
+# App Deployment with Docker and CoreOS on Microsoft Azure
 
-This quickstart provides everything you need to go from nothing to deploying a scaled application using Docker and CoreOS on Microsoft Azure.
+This repo provides everything you need to go from nothing to deploying a scaled application using Docker and CoreOS on Microsoft Azure.
 
-It assumes you are running on an Debian-based system like Ubuntu for the first section on Docker and a POSIX development machine for the second section on CoreOS. I’m going to use an A1 Azure VM running Ubuntu 14.04 LTS for this walkthrough.
+It assumes you are running on an Debian-based system like Ubuntu for the first section on Docker and a POSIX development machine for the second section on CoreOS.
 
 ## Docker Fundamentals
 
@@ -12,7 +12,7 @@ Docker provides an easy to use mechanism for building containerized cloud worklo
 
 ### Installing Docker and this sample repo
 
-Let's get Docker installed. On your Ubuntu instance, run the following to install Docker:
+Let's get Docker installed. On your Ubuntu instance (I’m using an A1 Azure VM running Ubuntu 14.04 LTS for this walkthrough), run the following to install Docker:
 
 ```
 $ sudo apt-get update
@@ -29,7 +29,7 @@ $ git clone http://github.com/timfpark/coreos-azure coreos-azure
 
 Docker works off the of the priniciple of layered containers. This enables you to build containers on top of more general containers that you can independently maintain.
 
-Moving into the directory ~/containers we see that sample has three Docker container specifications.  One for ubuntu, one for nodejs, and one for the sampleapp we are going to ultimately going to run and deploy.
+The directory ~/containers has three Docker container specifications.  One for ubuntu, one for nodejs, and one for the sampleapp we are going to ultimately going to run and deploy.
 
 ### Building a base Ubuntu container
 
@@ -45,9 +45,9 @@ RUN sudo apt-get update
 RUN sudo apt-get install -y git
 ```
 
-The first line indicates that this container should start from a stock Ubuntu 14.04 image and then install the 'git' package.
+The first line indicates that this container should start from a stock Ubuntu 14.04 image and then the last line installs the 'git' package.
 
-We'll use this as the base image for the rest of our containers.  The advantage of this approach is that we can later come back to this Dockerfile and add additional installation or configuration steps and cleanly have these changes flow into all of our downstream containers that start from this Docker image.
+We'll use this as the base image for the rest of our containers. The advantage of this approach is that we can later come back to this Dockerfile and add additional installation or configuration steps and cleanly have these changes flow into all of our downstream containers that start from this Docker image.
 
 We can then build this Docker container using:
 
@@ -61,7 +61,7 @@ Normally, you'd also push this container to the a Docker registry:
 $ sudo docker push timpark/ubuntu
 ```
 
-You won't be able to do this because timpark is my namespace, but this is the workflow when you go to do this for real with your own set of containers.
+You won't be able to do this because timpark is my namespace, but this is the workflow you'll follow when you go to build your own containers.
 
 ### Building a node.js base image
 
@@ -78,7 +78,7 @@ RUN sudo apt-get install -y nodejs
 RUN sudo npm install npm -g
 ```
 
-This starts with the timpark/ubuntu container that we built in the last section and layers on a set of run steps that installs node.js and updates npm to the latest version.
+This starts with the timpark/ubuntu container that we built in the last section and layers on a node.js installation and updates npm to the latest version.
 
 This leaves us with a container that we can use as the base for any nodejs application.
 
@@ -118,7 +118,7 @@ npm install
 node server.js
 ```
 
-This script manages the application lifecycle for the application. At boot it deletes the old copy (if any) from the application directory, clones the latest version from this repo, installs dependencies, and then fires it up. This enables you to do upgrades of this application by simply restarting the container and not having to rebuild an entire container for deployment.
+This script manages the application lifecycle for the application. At startup it deletes the old copy (if any) from the application directory, clones the latest version from this repo, installs dependencies, and then fires it up. This enables you to do upgrades of this application by simply restarting the container and not have to rebuild an entire container for deployment.
 
 Let's see this all work in action. You can launch this container from the command line with:
 
@@ -132,7 +132,7 @@ The port mapping tells docker that port 8000 on the inside of our container shou
 simple node.js server started and listening on port: 8000
 ```
 
-Open up another shell to this instance.  Let's see our container running in docker with 'ps':
+Open up another shell to your Ubuntu instance.  Let's see our container running in docker with 'ps':
 
 ```
 $ sudo docker ps
@@ -147,7 +147,6 @@ Let's hit the endpoint we opened up with 'curl':
 
 ```
 $ curl localhost:8000
-
 61501
 ```
 
@@ -165,13 +164,13 @@ request received, sending 61501
 
 Where d97f04223df7 is the container's ID that we obtained above from 'docker ps'.
 
-And we can stop our Docker container with:
+We can also stop our Docker container with:
 
 ```
 $ sudo docker stop d97f04223df7
 ```
 
-Let's review what we have done in this first section. We have built a Docker container for a node.js application based on two hierarchy base containers and we are able to start exact binary replicas of this application with Docker.
+Let's review what we have done. We have built a Docker container for a node.js application composed off of two base containers and we are able to start exact binary replicas of this application with Docker.
 
 Let's next see how we can use CoreOS to manage these application containers at scale.
 
@@ -179,7 +178,7 @@ Let's next see how we can use CoreOS to manage these application containers at s
 
 Now that we have a Docker image how do we go about deploying it in a production scenario where we have potentially a very large farm of frontend servers?
 
-Enter CoreOS. CoreOS provides the infrastructure for deploying and managing containerized workloads at scale. It is a stripped down Linux distribution that provides OS-as-a-service auto updates for the host OS and rule based container assignment, execution, and lifecycle management based on Systemd. Finally, it also provides some of the ancillary services that you need to run a distributed service like etcd for service discovery.
+Enter CoreOS. CoreOS provides the infrastructure for deploying and managing containerized large scale workloads. It is a stripped down Linux distribution that provides OS-as-a-service auto updates for the host OS and rule based container assignment, execution, and lifecycle management based on Systemd. Finally, it also provides the ancillary services that you need to run a distributed service like etcd for service discovery.
 
 ### Upload CoreOS VM image to your storage account:
 
@@ -192,7 +191,7 @@ $ azure account download
 
 We also need to prep a couple of items in the Azure portal before we can get started:
 
-1. Create a storage account in your subscription with a container. Note the storage account name, container name, and key.
+1. Create a storage account in your subscription with a container in "East US". Note the storage account name, container name, and key.
 2. Create a virtual network. Call it "coreos-network" and place it in "East US".
 
 Now upload the CoreOS disk image to your subscription using the Azure command line tools:
@@ -207,7 +206,7 @@ And create a VM image for this VHD:
 $ azure vm image create coreos --location "East US" --blob-url http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos-469.0.0-alpha.vhd --os linux
 ```
 
-Create SSH keys that we'll use for connecting to your CoreOS cluster machines. There is a script in the keys directory to do this for you. Accept all of the defaults that openssl asks you for.
+Create SSH keys that we'll use for connecting to your CoreOS cluster machines using the 'generate-keys' script in the ~/keys directory (accept all of the defaults that openssl asks you for):
 
 ```
 $ cd keys
@@ -226,7 +225,7 @@ This discovery token is configured in a set of cloud-init file called coreos-1.y
 $ curl https://discovery.etcd.io/new
 ```
 
-This will fetch a discovery URL that looks something like https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab. Copy this and edit each of the coreos-n.yml files and paste this into the cloud-init. Additionally, copy the contents of ~/keys/ssh-authorized.key and add it near the bottom of each of the files. Your final set of cloud-init files should something like this:
+This will fetch a discovery URL that looks something like https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab. Copy this and edit each of the coreos-X.yml files and paste this discovery token into it. Additionally, copy the contents of ~/keys/ssh-authorized.key and add it in the ssh_authorized_keys block. Your final set of cloud-init files should something like this:
 
 ```
 # coreos cloud-init
@@ -253,7 +252,7 @@ ssh_authorized_keys:
 hostname: coreos-1
 ```
 
-Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier for you (create-cluster). We'll first need to create an affinity group for this cluster so the hosts selected for the CoreOS VMs are close to each other:
+Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier for you called 'create-cluster'. We'll first need to create an affinity group for this cluster so the hosts selected for the CoreOS VMs are close to each other:
 
 ```
 $ azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
@@ -317,7 +316,7 @@ azure vm endpoint --lb-set-name http create coreos-2 80 80
 azure vm endpoint --lb-set-name http create coreos-3 80 80
 ```
 
-Then run the script to launch your CoreOS cluster. This will create a three cluster set and load balance all of them behind a cloud service.
+Then run the script to launch your CoreOS cluster. This will create a three machine cluster and load balance all of them behind a cloud service.
 
 ```
 $ ./create-cluster
@@ -349,7 +348,9 @@ MACHINE     IP      METADATA
 f6ebd7d1... 10.0.2.4    region=us-east
 ```
 
-Ok, so our cluster is working - go ahead and exit the ssh session with it and return to your development machine's shell. Let's setup our development machine to be able to control the cluster. The CoreOS utility fleetctl allows us to control our cluster so let's install that locally. We do that by cloning the fleet repo (in your development directory), building it, and installing it manually:
+Ok, so our cluster is working - go ahead and exit the ssh session with it and return to your development machine's shell.
+
+Let's setup our development machine to be able to control the cluster. The CoreOS utility fleetctl allows us to control our cluster so let's install that locally. We do that by cloning the fleet repo (in your development directory), building it, and installing it manually:
 
 ```
 $ git clone https://github.com/coreos/fleet.git
@@ -364,15 +365,17 @@ CoreOS security works off the principle that if you have the credentials to ssh 
 $ export FLEETCTL_TUNNEL=[your cloud service].cloudapp.net:22001
 ```
 
-Now you should be able to use your development machine to control the cluster. Let's list the machines on the cluster to check that it's working:
+You should now be able to use your development machine to control the cluster. Let's list the machines on the cluster to check that it's working:
 
 ```
 $ fleetctl list-machines
+MACHINE     IP      METADATA
+36a636af... 10.0.0.4    region=us-east
+40078616... 10.0.0.5    region=us-east
+f6ebd7d1... 10.0.2.4    region=us-east
 ```
 
-TODO: The expected output
-
-Ok, so we have setup our cluster and our development machine locally to control the cluster. The final step is scheduling workloads to run on the cluster. CoreOS uses the Systemd system management daemon to manage workloads on individual cluster machines and extends this concept to scheduling rule based distributed workloads across cluster machines.
+Success. We have setup our cluster and our development machine locally to control the cluster. The final step is scheduling workloads to run on the cluster. CoreOS uses the Systemd system management daemon to manage workloads on individual cluster machines and extends this concept to scheduling rule based distributed workloads across cluster machines.
 
 The Systemd unit file for our application looks like this:
 
@@ -395,7 +398,7 @@ RestartSec=10s
 X-Conflicts=simpleapp@*.service
 ```
 
-This unit file has two functions. First, it tells Systemd how to start and stop this container. In this case, we are using it to download and start up the Docker node.js container we built and pushed to the Docker repository in the first part of this quickstart. Secondly, it tells CoreOS how this workload can be distributed across the cluster. Here, X-Conflicts tells CoreOS that only one instance of this container can be run on a given CoreOS host. We use this to ensure that the containers will be executed such that we get redundancy and load spreading.
+This unit file has two functions. First, it tells Systemd how to start and stop this container. In this case, we are using it to download and start up the Docker node.js container we built and pushed to the Docker repository in the first part of this quickstart. Secondly, it tells CoreOS how this workload can be distributed across the cluster. Here, X-Conflicts tells CoreOS that only one instance of this container can be run on a given CoreOS host. We use this to ensure that the containers will be executed such that we get redundancy and load balancing across the cluster.
 
 The fact that this filename ends in @ indicates that it is a unit file template for CoreOS and that it can be applied multiple times. We can use that to spin up three instances of our simple application:
 
@@ -418,7 +421,7 @@ simpleapp@3.service f6ebd7d1.../10.0.2.4    activating  start-pre
 
 The start-pre indicates that our ExecStartPre directive above is being executed, which in our scenario means the cluster member is pulling the docker container down from the Docker registry.
 
-Trying again 30 seconds later, you should see that each member of our CoreOS cluster has started the Docker container and is up and running.
+Trying again roughly a minute later, you should see that each member of our CoreOS cluster has started the Docker container and is up and running.
 
 ```
 $ fleetctl list-units
@@ -436,3 +439,5 @@ $ curl [your cloud servicename].cloudapp.net
 ```
 
 And that's it: we have deployed a node.js application across a three machine frontend cluster using CoreOS and Docker on Azure.
+
+Many thanks go out to the CoreOS team for their hard work helping bringing up CoreOS on Azure!
