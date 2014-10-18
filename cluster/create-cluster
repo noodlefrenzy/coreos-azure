@@ -1,51 +1,54 @@
 #!/bin/bash
 
-# azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
-# azure service create --affinitygroup coreos-affinity coreosapp
+# NOTE: Make sure you've created an affinity group called coreos-affinity and cloud service before running this script:
+#
+# $ azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
+# $ azure service create --affinitygroup coreos-affinity [cloud service name]
 
 azure vm create \
-coreos-1 \
+[cloud service name] \
 coreos \
 ops \
 --vm-size small \
 --vm-name coreos-1 \
 --affinity-group coreos-affinity \
 --availability-set coreos-cluster-as \
---ssh 22 \
+--ssh 22001 \
 --ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
+--subnet-names coreos \
 --custom-data coreos-1.yml
 
 azure vm create \
-coreos-2 \
+[cloud service name] \
 coreos \
 ops \
+--connect \
 --vm-size small \
 --vm-name coreos-2 \
---affinity-group coreos-affinity \
 --availability-set coreos-cluster-as \
---ssh 22 \
+--ssh 22002 \
 --ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
+--subnet-names coreos \
 --custom-data coreos-2.yml
 
-#azure vm create \
-#coreosapp \
-#coreos-test \
-#ops \
-#--connect \
-#--affinity-group coreos-affinity \
-#--availability-set coreos-cluster-as \
-#--vm-size small \
-#--vm-name coreos-2 \
-#--ssh 22002 \
-#--ssh-cert ../keys/ssh-cert.pem \
-#--no-ssh-password \
-#--virtual-network-name coreos-network \
-#--custom-data coreos-2.yml
+azure vm create \
+[cloud service name] \
+coreos \
+ops \
+--connect \
+--availability-set coreos-cluster-as \
+--vm-size small \
+--vm-name coreos-3 \
+--ssh 22003 \
+--ssh-cert ../keys/ssh-cert.pem \
+--no-ssh-password \
+--virtual-network-name coreos-network \
+--custom-data coreos-3.yml
 
-# azure vm endpoint create coreos-1 80 80
-# azure vm endpoint create coreos-2 80 80
-# azure vm endpoint create coreos-3 80 80
+azure vm endpoint --lb-set-name http create coreos-1 80 80
+azure vm endpoint --lb-set-name http create coreos-2 80 80
+azure vm endpoint --lb-set-name http create coreos-3 80 80
