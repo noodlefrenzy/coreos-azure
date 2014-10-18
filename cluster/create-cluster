@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# NOTE: Make sure you've created an affinity group called coreos-affinity and cloud service before running this script:
+# NOTE: Make sure you've created an affinity group called coreos-affinity and a cloud service 
+# before running this script:
 #
 # $ azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
 # $ azure service create --affinitygroup coreos-affinity [cloud service name]
