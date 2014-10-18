@@ -1,3 +1,0 @@
-cd containers/ubuntu && ./build-container && cd ../..
-cd containers/nodejs && ./build-container && cd ../..
-cd containers/simpleapp && ./build-container && cd ../..
