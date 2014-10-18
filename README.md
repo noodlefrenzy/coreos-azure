@@ -29,11 +29,11 @@ $ git clone http://github.com/timfpark/coreos-azure coreos-azure
 
 Docker works off the of the priniciple of layered containers. This enables you to build containers on top of more general containers that you can independently maintain.
 
-Moving into the directory ~/coreos-azure/containers we see that sample has three Docker container specifications.  One for ubuntu, one for nodejs, and one for the sampleapp we are going to ultimately going to run and deploy.
+Moving into the directory ~/containers we see that sample has three Docker container specifications.  One for ubuntu, one for nodejs, and one for the sampleapp we are going to ultimately going to run and deploy.
 
 ### Building a base Ubuntu container
 
-Let's start by looking at the ubuntu specification in ~/coreos-azure/containers/ubuntu/Dockerfile
+Let's start by looking at the ubuntu specification in ~/containers/ubuntu/Dockerfile
 
 The specification is incredibly simple:
 
@@ -65,7 +65,7 @@ You won't be able to do this because timpark is my namespace, but this is the wo
 
 ### Building a node.js base image
 
-Let's next look at the first of these dependent containers in ~/coreos-azure/containers/nodejs:
+Let's next look at the first of these dependent containers in ~/containers/nodejs:
 
 ```
 FROM timpark/ubuntu
@@ -216,7 +216,7 @@ $ ./generate-keys
 
 Ok, we have what we need now from an Azure perspective. Let's now configure our CoreOS cluster.
 
-Change to the ~/environments/dev directory.
+Change to the ~/cluster directory.
 
 The first thing we are going to do is get a discovery token for etcd. 'etcd' is a distributed key-value store built on the Raft protocol and acts as a store for configuration information for CoreOS. Fleet, another part of the CoreOS puzzle, is a low-level init system built on 'etcd' that provides the functionality of Systemd over a distributed cluster.
 
@@ -226,30 +226,31 @@ This discovery token is configured in a set of cloud-init file called coreos-1.y
 $ curl https://discovery.etcd.io/new
 ```
 
-This will fetch a discovery URL that looks something like https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab. Copy this and edit coreos.yml and paste this into the cloud-init like this:
+This will fetch a discovery URL that looks something like https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab. Copy this and edit each of the coreos-n.yml files and paste this into the cloud-init. Additionally, copy the contents of ~/keys/ssh-authorized.key and add it near the bottom of each of the files. Your final set of cloud-init files should something like this:
 
 ```
 # coreos cloud-init
-
+#cloud-config
 coreos:
     etcd:
-        # generate a new token for each unique cluster from https://discovery.etcd.io/new
-        discovery: https://discovery.etcd.io/e6a84781d11952da545316cb90c9e9ab
-
-        # multi-region and multi-cloud deployments need to use $public_ipv4
+        name: coreos-1
+    # generate a new token for each unique cluster from https://discovery.etcd.io/new
+        discovery: https://discovery.etcd.io/233fad306300e898a38c6c2a9cfe0e3f
+    # multi-region and multi-cloud deployments need to use $public_ipv4
         addr: $private_ipv4:4001
         peer-addr: $private_ipv4:7001
-
     fleet:
         public-ip: $private_ipv4
         metadata: region=us-east
-
     units:
       - name: etcd.service
         command: start
       - name: fleet.service
         command: start
         after: etcd.service
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsk+NkMJrnkIF09Tn3PsDGRic9hAYbyTmy2F4hYmpM1LNmrWAkqZ5diD2V0ak1n3dpk8LtIHEjAG8NFUpMV0tCXyhX9kpY/AEf2q5p1EQUSHFaXDniKfoOJP8kFI4E0hIgobM2UB7l9K/enjVjX8kZ+9UkS9uRN1aLL0lbqIHk/xPOIv+d7fyivnbLi9bjvVvKnG9xbH4rfZcG3hWw6Ptc9JsYLVo3Q0Vm4f0KndXO2fIUwsRHLljKwuE1JOZk4U68TTZn+JCBSnqpkiGl7+Ax0I7sU0t5RIl7hpUbNJtm1n6NyXX/lDs9WqIpn/tF1In45bv2R3nACq+ZTAZe4huj
+hostname: coreos-1
 ```
 
 Ok, we're ready to provision our cluster. The quickstart repo has a script that makes this easier for you (create-cluster). We'll first need to create an affinity group for this cluster so the hosts selected for the CoreOS VMs are close to each other:
@@ -264,7 +265,7 @@ Next, create a cloud service for this cluster. We are going to assign containers
 $ azure service create --affinitygroup coreos-affinity [cloud service name]
 ```
 
-Edit create-cluster and replace "[cloud service name]" with the cloud service name that you chose.
+Edit 'create-cluster' and replace "[cloud service name]" with the cloud service name that you chose.
 
 ```
 azure vm create \
@@ -279,6 +280,7 @@ ops \
 --ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
+--subnet-names coreos \
 --custom-data coreos-1.yml
 
 azure vm create \
@@ -288,12 +290,12 @@ ops \
 --connect \
 --vm-size small \
 --vm-name coreos-2 \
---affinity-group coreos-affinity \
 --availability-set coreos-cluster-as \
 --ssh 22002 \
 --ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
+--subnet-names coreos \
 --custom-data coreos-2.yml
 
 azure vm create \
@@ -301,18 +303,21 @@ azure vm create \
 coreos \
 ops \
 --connect \
+--availability-set coreos-cluster-as \
 --vm-size small \
 --vm-name coreos-3 \
---affinity-group coreos-affinity \
---availability-set coreos-cluster-as \
---ssh 22002 \
+--ssh 22003 \
 --ssh-cert ../keys/ssh-cert.pem \
 --no-ssh-password \
 --virtual-network-name coreos-network \
 --custom-data coreos-3.yml
+
+azure vm endpoint --lb-set-name http create coreos-1 80 80
+azure vm endpoint --lb-set-name http create coreos-2 80 80
+azure vm endpoint --lb-set-name http create coreos-3 80 80
 ```
 
-Then run the script to launch your CoreOS cluster:
+Then run the script to launch your CoreOS cluster. This will create a three cluster set and load balance all of them behind a cloud service.
 
 ```
 $ ./create-cluster
@@ -328,17 +333,21 @@ Let's first make sure etcd is up and running:
 
 ```
 $ sudo etcdctl ls --recursive
+/coreos.com
+/coreos.com/updateengine
+/coreos.com/updateengine/rebootlock
+/coreos.com/updateengine/rebootlock/semaphore
 ```
-
-TODO: The expected output
 
 And that fleetctl knows about all of the members of the cluster:
 
 ```
 $ sudo fleetctl list-machines
+MACHINE     IP      METADATA
+36a636af... 10.0.0.4    region=us-east
+40078616... 10.0.0.5    region=us-east
+f6ebd7d1... 10.0.2.4    region=us-east
 ```
-
-TODO: The expected output
 
 Ok, so our cluster is working - go ahead and exit the ssh session with it and return to your development machine's shell. Let's setup our development machine to be able to control the cluster. The CoreOS utility fleetctl allows us to control our cluster so let's install that locally. We do that by cloning the fleet repo (in your development directory), building it, and installing it manually:
 
@@ -352,7 +361,7 @@ $ cp bin/fleetctl /usr/local/bin
 CoreOS security works off the principle that if you have the credentials to ssh into the cluster you are also authorized to manage it. The next step is to setup an environment variable so that fleetctl knows to tunnel over ssh to control the cluster.
 
 ```
-$ export FLEETCTL_TUNNEL=[your cloud service].cloudapp.net:2222
+$ export FLEETCTL_TUNNEL=[your cloud service].cloudapp.net:22001
 ```
 
 Now you should be able to use your development machine to control the cluster. Let's list the machines on the cluster to check that it's working:
@@ -363,7 +372,7 @@ $ fleetctl list-machines
 
 TODO: The expected output
 
-Ok, so we have setup our cluster and our development machine locally to control the cluster. The final step is executing workloads on the cluster. CoreOS uses the Systemd system management daemon to manage workloads on individual cluster machines and extends this concept to scheduling rule based distributed workloads across cluster machines.
+Ok, so we have setup our cluster and our development machine locally to control the cluster. The final step is scheduling workloads to run on the cluster. CoreOS uses the Systemd system management daemon to manage workloads on individual cluster machines and extends this concept to scheduling rule based distributed workloads across cluster machines.
 
 The Systemd unit file for our application looks like this:
 
@@ -386,20 +395,44 @@ RestartSec=10s
 X-Conflicts=simpleapp@*.service
 ```
 
-This unit file has two functions. First, it tells Systemd how to start and stop this container. In this case, we are using it to download (if necessary) and start up the Docker node.js container we built and pushed to the Docker repository in the first part of this quickstart. Secondly, it tells CoreOS how this workload can be distributed across the cluster. Here, X-Conflicts tells CoreOS that only one instance of this container can be run on a given CoreOS host. We use this to ensure that the containers will be executed such that we get redundancy and load spreading.
+This unit file has two functions. First, it tells Systemd how to start and stop this container. In this case, we are using it to download and start up the Docker node.js container we built and pushed to the Docker repository in the first part of this quickstart. Secondly, it tells CoreOS how this workload can be distributed across the cluster. Here, X-Conflicts tells CoreOS that only one instance of this container can be run on a given CoreOS host. We use this to ensure that the containers will be executed such that we get redundancy and load spreading.
 
 The fact that this filename ends in @ indicates that it is a unit file template for CoreOS and that it can be applied multiple times. We can use that to spin up three instances of our simple application:
 
 ```
 $ fleetctl start simpleapp@{1,2,3}.service
+Unit simpleapp@2.service launched
+Unit simpleapp@3.service launched
+Unit simpleapp@1.service launched on 36a636af.../10.0.0.4
 ```
 
-TODO: output?
-
-if we then list our units:
+If we then list our the units running we can see that our simpleapp is now coming online:
 
 ```
 $ fleetctl list-units
+UNIT            MACHINE         ACTIVE      SUB
+simpleapp@1.service 36a636af.../10.0.0.4    activating  start-pre
+simpleapp@2.service 40078616.../10.0.0.5    activating  start-pre
+simpleapp@3.service f6ebd7d1.../10.0.2.4    activating  start-pre
 ```
 
-TODO: show output
+The start-pre indicates that our ExecStartPre directive above is being executed, which in our scenario means the cluster member is pulling the docker container down from the Docker registry.
+
+Trying again 30 seconds later, you should see that each member of our CoreOS cluster has started the Docker container and is up and running.
+
+```
+$ fleetctl list-units
+UNIT            MACHINE         ACTIVE  SUB
+simpleapp@1.service 36a636af.../10.0.0.4    active  running
+simpleapp@2.service 40078616.../10.0.0.5    active  running
+simpleapp@3.service f6ebd7d1.../10.0.2.4    active  running
+```
+
+If we make a request against the web farm, we see that we are routed to one of the instances of our container running in the web farm and get back a count of the number of milliseconds it has been executing:
+
+```
+$ curl [your cloud servicename].cloudapp.net
+23443
+```
+
+And that's it: we have deployed a node.js application across a three machine frontend cluster using CoreOS and Docker on Azure.
