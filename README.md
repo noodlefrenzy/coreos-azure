@@ -194,19 +194,7 @@ We also need to prep a couple of items in the Azure portal before we can get sta
 1. Create a storage account in your subscription with a container in "East US". Note the storage account name, container name, and key.
 2. Create a virtual network. Call it "coreos-network" and place it in "East US".
 
-Now upload the CoreOS disk image to your subscription using the Azure command line tools:
-
-```
-$ azure vm disk upload --verbose https://coreostest.blob.core.windows.net/coreos/coreos_production_azure_image.vhd http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos_production_azure_image.vhd <your storage key>
-```
-
-And create a VM image for this VHD:
-
-```
-$ azure vm image create coreos --location "East US" --blob-url http://<your-storage-account>.blob.core.windows.net/<your-container>/coreos_production_azure_image.vhd --os linux
-```
-
-Next, let's create SSH keys that we'll use for connecting to your CoreOS cluster machines using the 'generate-keys' script in the ~/keys directory (accept all of the defaults that OpenSSL asks you for):
+Finally let's create SSH keys that we'll use for connecting to your CoreOS cluster machines using the 'generate-keys' script in the ~/keys directory (accept all of the defaults that OpenSSL asks you for):
 
 ```
 $ cd keys
@@ -271,7 +259,7 @@ Finally, edit 'create-cluster' and replace "[cloud service name]" with the cloud
 ```
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --vm-size small \
 --vm-name coreos-1 \
@@ -286,7 +274,7 @@ ops \
 
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --connect \
 --vm-size small \
@@ -301,7 +289,7 @@ ops \
 
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --connect \
 --availability-set coreos-cluster-as \

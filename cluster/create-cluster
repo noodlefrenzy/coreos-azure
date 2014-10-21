@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# NOTE: Make sure you've created an affinity group called coreos-affinity and a cloud service 
+# NOTE: Make sure you've created an affinity group called coreos-affinity and a cloud service
 # before running this script:
 #
 # $ azure account affinity-group create coreos-affinity -l "East US" -e "CoreOS App"
@@ -8,7 +8,7 @@
 
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --vm-size small \
 --vm-name coreos-1 \
@@ -23,7 +23,7 @@ ops \
 
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --connect \
 --vm-size small \
@@ -38,7 +38,7 @@ ops \
 
 azure vm create \
 [cloud service name] \
-coreos \
+2b171e93f07c4903bcad35bda10acf22__CoreOS-Alpha-475.1.0 \
 ops \
 --connect \
 --availability-set coreos-cluster-as \
