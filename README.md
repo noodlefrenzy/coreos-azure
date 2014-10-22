@@ -429,3 +429,5 @@ This server has been running for 23443ms.
 ```
 
 And that's it: we have deployed a node.js application across a three machine frontend cluster using CoreOS and Docker on Microsoft Azure!
+
+If this has been helpful to you, follow me on Twitter: [@timpark](http://twitter.com/timpark)
