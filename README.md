@@ -315,7 +315,7 @@ $ ./create-cluster
 Let's quickly ssh into the first machine in the cluster and check to make sure everything looks ok:
 
 ```
-$ ssh ops@[cloud service name].cloudapp.net -p 22001 -i ../keys/ssh-private.key
+$ ssh core@[cloud service name].cloudapp.net -p 22001 -i ../keys/ssh-private.key
 ```
 
 Let's first make sure etcd is up and running:
