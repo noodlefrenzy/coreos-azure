@@ -185,7 +185,7 @@ Enter CoreOS. CoreOS provides the infrastructure for deploying and managing cont
 We'll use your POSIX (Mac or Linux) development machine for this section of the quickstart. If you haven't already, install node.js on your development machine, the Azure command line tools, and import your subscription:
 
 ```
-$ sudo npm install -g azure
+$ sudo npm install -g azure-cli
 $ azure account download
 ```
 
