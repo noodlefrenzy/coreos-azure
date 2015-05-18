@@ -4,7 +4,7 @@ cd /var/www
 rm -rf simple-nodejs-server; true
 
 # install latest nodejs server
-git clone http://github.com/timfpark/simple-nodejs-server simple-nodejs-server
+git clone http://github.com/noodlefrenzy/simple-nodejs-server simple-nodejs-server
 cd simple-nodejs-server
 npm install
 

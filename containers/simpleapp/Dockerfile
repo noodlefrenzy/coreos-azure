@@ -1,5 +1,5 @@
-FROM timpark/nodejs
-MAINTAINER Tim Park <tpark@microsoft.com>
+FROM noodlefrenzy/nodejs
+MAINTAINER Michael Lanzetta <milanz@microsoft.com>
 
 RUN mkdir /var/www
 ADD start.sh /var/www/

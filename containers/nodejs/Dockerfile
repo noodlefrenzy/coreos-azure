@@ -1,5 +1,5 @@
-FROM timpark/ubuntu
-MAINTAINER Tim Park <tpark@microsoft.com>
+FROM noodlefrenzy/ubuntu
+MAINTAINER Michael Lanzetta <milanz@microsoft.com>
 
 RUN sudo apt-get install -y software-properties-common python-software-properties
 RUN sudo add-apt-repository ppa:chris-lea/node.js

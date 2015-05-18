@@ -4,8 +4,8 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-ExecStartPre=/usr/bin/docker pull timpark/simpleapp:latest
-ExecStart=/usr/bin/docker run --name simpleapp -p 80:8000 timpark/simpleapp
+ExecStartPre=/usr/bin/docker pull noodlefrenzy/simpleapp:latest
+ExecStart=/usr/bin/docker run --name simpleapp -p 80:8000 noodlefrenzy/simpleapp
 ExecStopPre=/usr/bin/docker kill simpleapp
 ExecStop=/usr/bin/docker rm simpleapp
 TimeoutStartSec=0

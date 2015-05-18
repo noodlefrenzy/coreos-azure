@@ -1,1 +1,1 @@
-docker build --rm -t 'timpark/ubuntu' .
+docker build --rm -t 'noodlefrenzy/ubuntu' .
